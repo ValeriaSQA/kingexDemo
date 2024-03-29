@@ -1,0 +1,23 @@
+{
+  "name": "kingexdemo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test:signIn:chrome": "npx playwright test --project=chromium --grep @signIn",
+    "test:signIn:firefox": "npx playwright test --project=firefox --grep @signIn",
+    "test:signIn:webkit": "npx playwright test --project=webkit --grep @signIn"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.42.1",
+    "@types/node": "^20.11.30"
+  },
+  "dependencies": {
+    "@faker-js/faker": "^8.4.1",
+    "dotenv": "^16.4.5",
+    "generate-password": "^1.7.1"
+  }
+}
