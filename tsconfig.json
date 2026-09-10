@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "ES2022",
     "module": "commonjs",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -8,8 +8,18 @@
     "skipLibCheck": true,
     "paths": {
       "@pageObjects/*": [
-        "pageObjects/*"
+        "./pageObjects/*"
       ]
-    }
-  }
+    },
+    "noEmit": true,
+    "types": [
+      "node"
+    ]
+  },
+  "include": [
+    "playwright.config.ts",
+    "global-setup.ts",
+    "pageObjects/**/*.ts",
+    "tests/**/*.ts"
+  ]
 }

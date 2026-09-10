@@ -1,16 +1,16 @@
-import { expect, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 export class SignInPage {
     readonly page: Page;
-    readonly emailInput: ReturnType<Page['locator']>;
-    readonly passwordInput: ReturnType<Page['locator']>;
-    readonly signInButton: ReturnType<Page['locator']>;
+    readonly emailInput: Locator;
+    readonly passwordInput: Locator;
+    readonly signInButton: Locator;
 
     constructor(page: Page) {
         this.page = page;
         this.emailInput = page.getByPlaceholder('Email');
         this.passwordInput = page.getByPlaceholder('Password');
-        this.signInButton = page.getByRole('button', {name: 'Sign in'});
+        this.signInButton = page.getByRole('button', { name: 'Sign in', exact: true });
     }
 
     async navigateToSignInPage(): Promise<this> {
@@ -19,8 +19,7 @@ export class SignInPage {
         return this;
     }
 
-    async signIn(email: string,
-                 password: string): Promise<this> {
+    async signIn(email: string, password: string): Promise<this> {
         await this.emailInput.fill(email);
         await this.passwordInput.fill(password);
         await this.signInButton.click();

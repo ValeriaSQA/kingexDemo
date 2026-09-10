@@ -1,112 +1,112 @@
-# demo-autotests-playwright
+# Kingex Demo — Playwright E2E
 
-> E2E Demo by Kingex product
+Демонстрационный проект автоматизации проверки входа в Kingex на **TypeScript + Playwright**. Локаторы и действия формы вынесены в Page Object; сценарии запускаются в Chromium, Firefox и WebKit.
 
-To set up the Playwright framework follow [Playwright DOCUMENTATION](https://playwright.dev/).
+Это небольшой пример тестовой архитектуры, а не полный регрессионный набор Kingex. Репозиторий не содержит само приложение: для E2E нужен доступный тестовый стенд.
 
-## Installation
+## Покрытие
 
-Install dependencies
+| Сценарий | Проверки | Тег |
+| --- | --- | --- |
+| Форма входа доступна | Кнопка входа видна, поля доступны для ввода, пароль скрыт | `@smoke` |
+| Вход незарегистрированного пользователя | После отправки появляется заданное сообщение об отказе; URL остаётся `/auth/signin` | `@signInError` |
 
-```bash
-npm install
-```
+Оба сценария имеют общий тег `@signIn`. Всего — 2 сценария × 3 браузера = 6 запусков. WebKit — браузерный движок, а не установленный Safari; проект `chromium` также не запускает установленный Google Chrome.
 
-Install Playwright
+Проверка отказа ждёт явное сообщение интерфейса. Одна проверка URL сразу после клика могла бы завершиться успешно ещё до ответа сервера.
 
-```bash
-npm init playwright@latest
-```
+## Требования и установка
 
-## Running Tests
-
-Run all e2e tests
-
-```bash
-npx playwright test
-```
-
-Tags are available to execute test suites
+- Node.js 22 или новее; для локального запуска и CI предусмотрена ветка 22 в `.nvmrc`.
+- npm и доступ к тестовому стенду.
+- Англоязычная форма с полями `Email`, `Password` и кнопкой `Sign in` по пути `/auth/signin`.
 
 ```bash
-npx playwright test -grep @signIn
+git clone https://github.com/ValeriaSQA/kingexDemo.git
+cd kingexDemo
+# Если используется nvm:
+nvm install
+nvm use
+npm ci
+npx playwright install
+cp .env.example .env
 ```
 
-Run tests in headed browsers
+На Linux зависимости браузеров можно установить командой `npx playwright install --with-deps`. После обновления Playwright повторите установку браузеров. Повторно запускать `npm init playwright` не нужно.
 
-```bash
-npx playwright test --headed
+## Настройка окружения
+
+Заполните `.env`:
+
+```dotenv
+BASE_URL=https://your-test-host.example
+SIGN_IN_ERROR_TEXT="Exact invalid-credentials message from your application"
 ```
 
-Run all the tests against a specific project
+Значения выше — шаблоны, не готовый стенд и не подтверждённый текст ошибки Kingex.
 
-```bash
-npx playwright test --project=chromium
+- `BASE_URL` — адрес стенда без пути, query-параметров и фрагмента. Тест сам открывает `/auth/signin`. Пустой или некорректный адрес приводит к понятной ошибке перед запуском сценариев.
+- `SIGN_IN_ERROR_TEXT` — точный текст сообщения о неверных учётных данных на вашем стенде. Обязателен только для негативного сценария; без него сценарий явно завершается ошибкой. Укажите именно сообщение об отказе авторизации, а не сетевую ошибку или ошибку формата поля.
+- Переменные окружения имеют приоритет над `.env`. Файл `.env` исключён из Git; `.env.example` хранится в репозитории.
+
+Негативный тест создаёт новый email вида `test-<UUID>@example.com` и случайный пароль при каждом запуске, включая повторные попытки. Он не регистрирует пользователя. Данные генерируются встроенным `node:crypto`, без Faker и generate-password.
+
+## Команды
+
+| Команда | Назначение |
+| --- | --- |
+| `npm run typecheck` | Проверка типов без запуска браузеров |
+| `npm run test:list` | Список сценариев; стенд не требуется |
+| `npm test` | Все сценарии во всех трёх браузерах |
+| `npm test -- --project=chromium` | Только Chromium |
+| `npm test -- --grep @smoke` | Только доступность формы; текст ошибки не нужен |
+| `npm test -- --grep @signInError` | Только отказ во входе |
+| `npm run test:headed` | Запуск с видимыми окнами браузеров |
+| `npm run test:ui` | Интерактивный режим Playwright |
+| `npm run test:debug` | Пошаговая отладка |
+| `npm run report` | Последний HTML-отчёт |
+| `npm audit` | Проверка известных уязвимостей зависимостей |
+
+Сохранены прежние команды `test:signIn:chrome`, `test:signIn:firefox`, `test:signIn:webkit`. Суффикс `chrome` означает проект Chromium.
+
+В WebStorm выберите Node.js 22+ в настройках проекта, выполните установку через терминал и запускайте команды из `package.json`. Рабочий каталог запуска — корень репозитория, где лежит `.env`.
+
+## Структура
+
+```text
+.github/workflows/playwright.yml  Проверки кода и браузерные тесты в GitHub Actions
+pageObjects/SignInPage.ts         Локаторы формы, переход и отправка данных
+tests/signIn.spec.ts              Проверка формы и негативный сценарий входа
+global-setup.ts                   Проверка адреса стенда перед запуском
+playwright.config.ts             Браузеры, таймауты, отчёты и окружение
+tsconfig.json                    Строгая проверка TypeScript и алиас @pageObjects
+.env.example                     Шаблон локальных настроек
+.nvmrc                           Версия Node.js для nvm и CI
 ```
 
-To record a trace during development mode
+Для нового сценария добавьте `*.spec.ts` в `tests/`. Переиспользуемые локаторы и действия помещайте в `pageObjects/`, а проверки результата — в сценарии. Используйте автоожидания Playwright вместо фиксированных пауз.
 
-```bash
-npx playwright test --trace on
-```
+## Диагностика
 
-To open the last HTML report run
+На ошибке сохраняются скриншот и trace, HTML-отчёт находится в `playwright-report/`, технические артефакты — в `test-results/`. Эти каталоги исключены из Git. Trace можно открыть из отчёта.
 
-```bash
-npx playwright show-report
-```
+Запуски используют один worker для умеренной нагрузки на стенд. Локально повторных попыток нет, в CI их две. Общий таймаут теста — 50 секунд, проверки — 10 секунд, перехода — 30 секунд.
 
-## Test Run Scripts
+Если тест не находит поля или сообщение, проверьте язык интерфейса, актуальность локаторов и `SIGN_IN_ERROR_TEXT`. CAPTCHA, антибот-защита и изменение формы потребуют согласованных настроек тестового окружения. Проверка настоящей формы и точного текста ошибки должна выполняться на актуальном стенде; успешный `test:list` не означает прохождение E2E.
 
-Scripts for running tests in Chrome, Firefox, and Safari browsers can be found within the `package.json` file
+## GitHub Actions
 
-```
-"test:signIn:chrome": "npx playwright test --project=chromium --grep @signIn",
-"test:signIn:firefox": "npx playwright test --project=firefox --grep @signIn",
-"test:signIn:webkit": "npx playwright test --project=webkit --grep @signIn"
-```
+Workflow запускается для push/PR в `main` и `master`, а также вручную.
 
-## Test Results Example
+1. Job `validate` устанавливает зависимости через `npm ci`, проверяет типы, обнаружение тестов и выполняет `npm audit --audit-level=high`.
+2. Job `e2e` запускает браузерные тесты, если заданы обе repository variables: `BASE_URL` и `SIGN_IN_ERROR_TEXT`.
+3. HTML-отчёт сохраняется как артефакт на 7 дней, в том числе при падении тестов.
 
-```bash
-Running 3 tests using 1 worker
+Переменные задаются в **Settings → Secrets and variables → Actions → Variables**. Без них `e2e` будет **skipped**: зелёный `validate` подтверждает только проверки кода. Адрес стенда и текст ошибки не должны содержать секретов.
 
-  ✓  1 [chromium] › signIn.spec.ts:16:7 › Sign In E2E @signIn › Check that an unregistered user is unable to Sign In @signInError (7.8s)
-  ✓  2 [firefox] › signIn.spec.ts:16:7 › Sign In E2E @signIn › Check that an unregistered user is unable to Sign In @signInError (6.6s)
-  ✓  3 [webkit] › signIn.spec.ts:16:7 › Sign In E2E @signIn › Check that an unregistered user is unable to Sign In @signInError (8.1s)
+## Документация
 
-  3 passed (26.2s)
-```
-
-## Test Architecture
-
-### Configs
-
-#### E2E
-
-```bash
-npx playwright test --config playwright.config.js
-```
-
-### Browsers
-
-Projects are set up within the `playwright.config.js` file, enabling us to run tests on various browsers and devices
-
-```js
-  projects: [
-  {
-    name: 'chromium',
-    use: { ...devices['Desktop Chrome'] },
-  },
-
-  {
-    name: 'firefox',
-    use: { ...devices['Desktop Firefox'] },
-  },
-
-  {
-    name: 'webkit',
-    use: { ...devices['Desktop Safari'] },
-  }
-]
-```
+- [Playwright: начало работы](https://playwright.dev/docs/intro)
+- [Автоожидания и проверки](https://playwright.dev/docs/test-assertions)
+- [Page Object Model](https://playwright.dev/docs/pom)
+- [Запуск в CI](https://playwright.dev/docs/ci-intro)
